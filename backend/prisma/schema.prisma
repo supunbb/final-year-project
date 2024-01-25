@@ -1,0 +1,39 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+
+
+
+// Set your MongoDB connection URL
+datasource db {
+  provider = "mongodb"
+  url      = "mongodb+srv://supunbb:sb0272245137@evaluex.ztr264j.mongodb.net/?retryWrites=true&w=majority"
+}
+
+
+// Define the data model for the Post entity
+model Post {
+  id        String   @id @map("_id") // Unique identifier for the post
+  title     String   // Title of the post
+  content   String?  // Content of the post (optional)
+  createdAt DateTime @default(now()) // Timestamp of when the post was created
+  updatedAt DateTime @updatedAt // Timestamp of when the post was last updated
+  author    User     @relation(fields: [authorId], references: [id]) // Relationship with the User entity
+  authorId  String   // ID of the user who created the post
+}
+
+// Define the data model for the User entity
+model User {
+  id        String   @id @map("_id") // Unique identifier for the user
+  username  String   @unique // Username of the user
+  email     String   @unique // Email of the user
+  password  String   // Password of the user
+  createdAt DateTime @default(now()) // Timestamp of when the user account was created
+  updatedAt DateTime @updatedAt // Timestamp of when the user account was last updated
+  posts     Post[]   // Relationship with multiple Post entities
+}
