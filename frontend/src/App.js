@@ -5,7 +5,12 @@ import LandingPage from './components/LandingPage';
 import LoginPage from './components/LoginPage';
 import FunctionalityPage from './components/FunctionalityPage';
 import SignUpPage from './components/SignUpPage';
-import MakeMarkingSchemePage from './components/MakeMarkingSchemePage'; // Import the new component
+import MakeMarkingSchemePage from './components/MakeMarkingSchemePage'; 
+import UploadFilesPage from './components/UploadFilesPage';
+import EvaluatePage from './components/EvaluatePage';
+import DetailViewPage from './components/DetailViewPage';
+
+// Import the new component
 
 function App() {
   return (
@@ -16,8 +21,11 @@ function App() {
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/profile" element={<FunctionalityPage />} />
         <Route path="/make-marking-scheme" element={<MakeMarkingSchemePage />} /> {/* Add this line */}
-        <Route path="/upload-files" element={<div>Upload Files Page</div>} />
-        <Route path="/evaluate" element={<div>Evaluate Page</div>} />
+        <Route path="/upload-files" element={<UploadFilesPage/>} />
+        <Route path="/evaluate" element={<EvaluatePage />} />
+        <Route path="/detail/:id" component={<DetailViewPage/>} />
+    
+
       </Routes>
     </Router>
   );

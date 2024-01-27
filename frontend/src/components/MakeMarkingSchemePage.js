@@ -224,11 +224,11 @@ const MakeMarkingSchemePage = () => {
 
         {/* Navigation Buttons */}
         <div className="flex justify-between mt-8">
-          <Link to="/FunctionalityPage" className="bg-green-500 text-white py-2 px-4 rounded-md">
+          <Link to="/upload-files" className="bg-green-500 text-white py-2 px-4 rounded-md">
             Go to Upload File Page
           </Link>
           {/* New Button to Go to Functionality Page */}
-          <Link to="/FunctionalityPage" className="bg-blue-500 text-white py-2 px-4 rounded-md">
+          <Link to="/profile" className="bg-blue-500 text-white py-2 px-4 rounded-md">
             Go to Functionality Page
           </Link>
         </div>
