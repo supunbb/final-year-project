@@ -1,25 +1,27 @@
-// src/components/Dashboard/Dashboard.js
 import React, { useState, useEffect } from 'react';
-import AnswerSchemeCard from '../AnswerSchemeCard';
+import { Link } from 'react-router-dom';
+import AnswerSchemeCard from './AnswerSchemeCard';
+import NavigationBar from './NavigationBar';
 
-const Dashboard = () => {
+const MakeMarkingSchemePage = () => {
   const [newAnswer, setNewAnswer] = useState({
     question: '',
     scheme: '',
+    marks: 0,
     questionType: 'direct',
   });
 
   const [answerSchemes, setAnswerSchemes] = useState([]);
   const [editMode, setEditMode] = useState(false);
   const [editId, setEditId] = useState(null);
-  const [questionPapers, setQuestionPapers] = useState([]);
-  const [selectedQuestionPaper, setSelectedQuestionPaper] = useState(null);
-  const [questionPaperName, setQuestionPaperName] = useState('');
+  const [makingSchemes, setMakingSchemes] = useState([]);
+  const [selectedMakingScheme, setSelectedMakingScheme] = useState(null);
+  const [makingSchemeName, setMakingSchemeName] = useState('');
 
   useEffect(() => {
-    // Load question papers from local storage
-    const storedQuestionPapers = JSON.parse(localStorage.getItem('questionPapers')) || [];
-    setQuestionPapers(storedQuestionPapers);
+    // Load making schemes from local storage
+    const storedMakingSchemes = JSON.parse(localStorage.getItem('makingSchemes')) || [];
+    setMakingSchemes(storedMakingSchemes);
   }, []);
 
   const handleInputChange = (e) => {
@@ -44,12 +46,12 @@ const Dashboard = () => {
       // Add new question in normal mode
       setAnswerSchemes((prevSchemes) => [...prevSchemes, { id: Date.now(), ...newAnswer }]);
     }
-    setNewAnswer({ question: '', scheme: '', questionType: 'direct' });
+    setNewAnswer({ question: '', scheme: '', marks: 0, questionType: 'direct' });
   };
 
-  const handleEdit = (id, question, scheme, questionType) => {
+  const handleEdit = (id, question, scheme, marks, questionType) => {
     // Set form fields for editing
-    setNewAnswer({ question, scheme, questionType });
+    setNewAnswer({ question, scheme, marks, questionType });
     setEditMode(true);
     setEditId(id);
   };
@@ -58,34 +60,35 @@ const Dashboard = () => {
     setAnswerSchemes((prevSchemes) => prevSchemes.filter((scheme) => scheme.id !== id));
   };
 
-  const handleSaveQuestionPaper = () => {
-    // Save the entire marking scheme as a question paper
-    const newQuestionPaper = {
+  const handleSubmitMakingScheme = () => {
+    // Save the current set of answer schemes as a making scheme
+    const newMakingScheme = {
       id: Date.now(),
-      name: questionPaperName || `Question Paper ${questionPapers.length + 1}`,
+      name: makingSchemeName || `Making Scheme ${makingSchemes.length + 1}`,
       schemes: [...answerSchemes],
     };
 
-    setQuestionPapers((prevQuestionPapers) => [...prevQuestionPapers, newQuestionPaper]);
+    setMakingSchemes((prevMakingSchemes) => [...prevMakingSchemes, newMakingScheme]);
 
-    // Clear the current marking scheme
+    // Clear the current set of answer schemes
     setAnswerSchemes([]);
-    setNewAnswer({ question: '', scheme: '', questionType: 'direct' });
+    setNewAnswer({ question: '', scheme: '', marks: 0, questionType: 'direct' });
 
-    // Save question papers to local storage
-    localStorage.setItem('questionPapers', JSON.stringify([...questionPapers, newQuestionPaper]));
+    // Save making schemes to local storage
+    localStorage.setItem('makingSchemes', JSON.stringify([...makingSchemes, newMakingScheme]));
   };
 
-  const handleLoadQuestionPaper = (questionPaper) => {
-    // Load a saved question paper
-    setSelectedQuestionPaper(questionPaper);
-    setAnswerSchemes(questionPaper.schemes);
-    setQuestionPaperName(questionPaper.name);
+  const handleLoadMakingScheme = (makingScheme) => {
+    // Load a saved making scheme
+    setSelectedMakingScheme(makingScheme);
+    setAnswerSchemes(makingScheme.schemes);
+    setMakingSchemeName(makingScheme.name);
   };
 
   return (
     <div className="container mx-auto p-8">
-      <h1 className="text-4xl font-bold mb-8">Answer Schemes Dashboard</h1>
+    <NavigationBar/>
+      <h1 className="text-4xl font-bold mb-8">Making Schemes Dashboard</h1>
 
       {/* Add Form for Submitting/Editing Answer Schemes */}
       <form onSubmit={handleSubmit} className="mb-8">
@@ -109,6 +112,17 @@ const Dashboard = () => {
           ></textarea>
         </div>
         <div className="flex items-center mt-4">
+          <label className="mr-2">Marks:</label>
+          <input
+            type="number"
+            name="marks"
+            value={newAnswer.marks}
+            onChange={handleInputChange}
+            className="p-2 border border-gray-300 rounded-md w-full"
+            required
+          />
+        </div>
+        <div className="flex items-center mt-4">
           <label className="mr-2">Question Type:</label>
           <select
             name="questionType"
@@ -121,7 +135,7 @@ const Dashboard = () => {
           </select>
         </div>
         <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded-md mt-4">
-          {editMode ? 'Save Changes' : 'Submit Answer Scheme'}
+          {editMode ? 'Save Changes' : 'Submit'}
         </button>
       </form>
 
@@ -132,7 +146,7 @@ const Dashboard = () => {
             <AnswerSchemeCard question={scheme.question} scheme={scheme.scheme} />
             <div className="absolute top-0 right-0 flex space-x-2 p-1">
               <button
-                onClick={() => handleEdit(scheme.id, scheme.question, scheme.scheme, scheme.questionType)}
+                onClick={() => handleEdit(scheme.id, scheme.question, scheme.scheme, scheme.marks, scheme.questionType)}
                 className="bg-yellow-500 text-white p-1 rounded-md"
               >
                 Edit
@@ -151,36 +165,36 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* Save and Load Question Paper Section */}
+      {/* Save and Load Making Scheme Section */}
       <div className="mt-8">
-        <h2 className="text-2xl font-bold mb-4">Save and Load Question Papers</h2>
+        <h2 className="text-2xl font-bold mb-4">Save and Load Making Schemes</h2>
         <div className="flex items-center space-x-4 mb-4">
           <input
             type="text"
-            placeholder="Enter Question Paper Name"
-            value={questionPaperName}
-            onChange={(e) => setQuestionPaperName(e.target.value)}
+            placeholder="Enter Making Scheme Name"
+            value={makingSchemeName}
+            onChange={(e) => setMakingSchemeName(e.target.value)}
             className="p-2 border border-gray-300 rounded-md"
           />
           <button
-            onClick={handleSaveQuestionPaper}
+            onClick={handleSubmitMakingScheme}
             className="bg-green-500 text-white py-2 px-4 rounded-md"
           >
-            Save Question Paper
+            Submit Making Scheme
           </button>
         </div>
 
         <div className="flex space-x-4">
           <div>
-            <h3 className="text-xl font-bold mb-2">Saved Question Papers</h3>
-            {questionPapers.length === 0 ? (
-              <p>No question papers saved yet.</p>
+            <h3 className="text-xl font-bold mb-2">Saved Making Schemes</h3>
+            {makingSchemes.length === 0 ? (
+              <p>No making schemes saved yet.</p>
             ) : (
               <ul className="list-disc pl-6">
-                {questionPapers.map((paper) => (
-                  <li key={paper.id}>
-                    <button onClick={() => handleLoadQuestionPaper(paper)} className="underline">
-                      {paper.name}
+                {makingSchemes.map((scheme) => (
+                  <li key={scheme.id}>
+                    <button onClick={() => handleLoadMakingScheme(scheme)} className="underline">
+                      {scheme.name}
                     </button>
                   </li>
                 ))}
@@ -188,26 +202,40 @@ const Dashboard = () => {
             )}
           </div>
 
-          {selectedQuestionPaper && (
+          {selectedMakingScheme && (
             <div>
-              <h3 className="text-xl font-bold mb-2">Loaded Question Paper</h3>
-              <p>{selectedQuestionPaper.name}</p>
+              <h3 className="text-xl font-bold mb-2">Loaded Making Scheme</h3>
+              <p>{selectedMakingScheme.name}</p>
               <button
                 onClick={() => {
-                  setSelectedQuestionPaper(null);
+                  setSelectedMakingScheme(null);
                   setAnswerSchemes([]);
-                  setQuestionPaperName('');
+                  setMakingSchemeName('');
                 }}
                 className="bg-yellow-500 text-white py-2 px-4 rounded-md mt-4"
               >
-                Clear Loaded Paper
+                Clear Loaded Scheme
               </button>
             </div>
           )}
         </div>
+        <div className="container mx-auto p-8">
+        {/* ... (unchanged code) */}
+
+        {/* Navigation Buttons */}
+        <div className="flex justify-between mt-8">
+          <Link to="/FunctionalityPage" className="bg-green-500 text-white py-2 px-4 rounded-md">
+            Go to Upload File Page
+          </Link>
+          {/* New Button to Go to Functionality Page */}
+          <Link to="/FunctionalityPage" className="bg-blue-500 text-white py-2 px-4 rounded-md">
+            Go to Functionality Page
+          </Link>
+        </div>
+      </div>
       </div>
     </div>
   );
 };
 
-export default Dashboard;
+export default MakeMarkingSchemePage;

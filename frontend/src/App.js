@@ -1,29 +1,26 @@
-// src/App.js
+// App.js
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Header from './components/Header';
-import Dashboard from './components/dashboard/Dashboard';
-import AnswerSchemeCard from './components/AnswerSchemeCard';
-import NotFound from './components/NotFound';
+import LandingPage from './components/LandingPage';
+import LoginPage from './components/LoginPage';
+import FunctionalityPage from './components/FunctionalityPage';
+import SignUpPage from './components/SignUpPage';
+import MakeMarkingSchemePage from './components/MakeMarkingSchemePage'; // Import the new component
 
-const App = () => {
+function App() {
   return (
     <Router>
-      <div>
-      <h1 className="text-4xl font-bold text-blue-500">Your Text Goes Here</h1>
-
-
-
-
-        <Header />
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/answer/:id" element={<AnswerSchemeCard />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </div>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/profile" element={<FunctionalityPage />} />
+        <Route path="/make-marking-scheme" element={<MakeMarkingSchemePage />} /> {/* Add this line */}
+        <Route path="/upload-files" element={<div>Upload Files Page</div>} />
+        <Route path="/evaluate" element={<div>Evaluate Page</div>} />
+      </Routes>
     </Router>
   );
-};
+}
 
 export default App;

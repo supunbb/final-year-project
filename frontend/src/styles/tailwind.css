@@ -1,3 +1,19 @@
+/* tailwind.css */
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
+
+/* Navbar styles */
+.navbar {
+  @apply bg-gray-800 p-4 text-white flex justify-between items-center;
+}
+
+/* Landing page styles */
+.landing-page {
+  @apply flex flex-col items-center justify-center h-screen bg-gray-100;
+}
+
+/* Get Started button styles */
+.get-started-button {
+  @apply bg-blue-500 text-white px-6 py-3 rounded-full hover:bg-blue-700;
+}
