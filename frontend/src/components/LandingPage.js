@@ -2,21 +2,31 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from './Navbar';
+import heroImg from '../assets/heroImage.png';
+import bgImg from '../assets/bg-hero.png'
 
 const LandingPage = () => {
   return (
-    <div>
+    <div className=' overflow-hidden bg-cover bg-center' style={{ backgroundImage: `url(${bgImg})` }}>
       <Navbar />
-      <div className="flex flex-col items-center justify-center h-screen bg-gray-100">
-        <h1 className="text-4xl font-bold mb-4">Automated Answer Evaluation</h1>
-        <p className="text-lg text-center mb-8">
-          Evaluate students' answers automatically with EvalUEX. Streamline your grading process.
-        </p>
-        <Link to="/login">
-          <button className="bg-blue-500 text-white px-6 py-3 rounded-full hover:bg-blue-700">
-            Get Started
-          </button>
-        </Link>
+      <div className="flex items-center justify-center p-16">
+        <div className='flex items-center justify-center gap-12'>
+          <div className='flex flex-col items-center justify-center'>
+            <h4 className="text-h4 text-primaryBlue/50 font-heading">Unlocking Knowledge with Precision </h4>
+            <h2 className="text-h2 text-center text-primaryBlue mb-2 font-heading">
+              Elevate Learning Experiences with EvalueX.
+            </h2>
+            <Link to="/login">
+              <button className="px-6 py-2 bg-primaryBlue text-h4 text-neutral rounded-lg hover:underline">
+                Get Started
+              </button>
+            </Link>
+          </div>
+
+          <div>
+            <img src={heroImg} alt="Evalux Icon" className='h-3/4' />
+          </div>
+        </div>
       </div>
     </div>
   );
