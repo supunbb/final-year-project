@@ -1,6 +1,8 @@
 // LoginPage.js
 import React from 'react';
 import { Link } from 'react-router-dom';
+import bgImg from '../assets/bg-login.png';
+import evaluxIcon from '../assets/evalux icon 1.png';
 
 const LoginPage = () => {
   const handleLogin = () => {
@@ -10,11 +12,18 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-gray-100">
-      <h1 className="text-4xl font-bold mb-4">Login to EvalUEX</h1>
-      <div className="w-1/3 bg-white p-6 rounded-lg shadow-md">
+    <div className="flex flex-col items-start justify-center h-screen overflow-hidden bg-cover bg-center p-16" style={{ backgroundImage: `url(${bgImg})` }}>
+
+      <div className="w-1/3 bg-white p-6 rounded-lg shadow-md ">
+        <div className='flex justify-start items-start gap-4 mb-2'>
+          <img src={evaluxIcon} alt="Evalux Icon" className='w-12' />
+
+          <div className="text-h4 font-heading text-primaryBlue">Login</div>
+        </div>
+
+
         <div className="mb-4">
-          <label htmlFor="username" className="text-lg font-semibold block mb-2">
+          <label htmlFor="username" className="text-h5 font-semibold text-primaryBlue block mb-2 ">
             Username:
           </label>
           <input
@@ -25,7 +34,7 @@ const LoginPage = () => {
           />
         </div>
         <div className="mb-4">
-          <label htmlFor="password" className="text-lg font-semibold block mb-2">
+          <label htmlFor="password" className="text-h5 font-semibold text-primaryBlue block mb-2 ">
             Password:
           </label>
           <input
@@ -37,12 +46,12 @@ const LoginPage = () => {
         </div>
         <div className="flex justify-between items-center">
           <button
-            className="bg-blue-500 text-white px-6 py-3 rounded-full hover:bg-blue-700"
+            className="px-6 py-2 bg-primaryBlue rounded-lg hover:bg-blue-700 hover:underline text-white font-text text-h5 "
             onClick={handleLogin}
           >
             Login
           </button>
-          <Link to="/signup" className="text-blue-500 hover:underline">
+          <Link to="/signup" className=" text-primaryBlue hover:underline">
             Sign Up
           </Link>
         </div>
