@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from "react";
 import NavigationBar from "./Navbar";
-import { Link } from 'react-router-dom';
+import { Link } from "react-router-dom";
+import axios from "axios"; // Ensure you have axios installed
 
 const MakeMarkingSchemePage = () => {
   const [newAnswer, setNewAnswer] = useState({
     question: "",
-    scheme: "",
-    marks: 0,
-    questionType: "direct",
+    correctAnswer: "",
     keywords: "",
+    allocatedMarks: 0,
+    evaluationType: "true",
   });
 
   const [answerSchemes, setAnswerSchemes] = useState([]);
@@ -16,12 +17,27 @@ const MakeMarkingSchemePage = () => {
   const [editId, setEditId] = useState(null);
   const [makingSchemes, setMakingSchemes] = useState([]);
   const [editingSchemeId, setEditingSchemeId] = useState(null);
-  const [makingSchemeName, setMakingSchemeName] = useState("");
+  const [makingSchemeName, setMakingSchemeName] = useState([]);
 
   useEffect(() => {
-    const storedMakingSchemes =
-      JSON.parse(localStorage.getItem("makingSchemes")) || [];
-    setMakingSchemes(storedMakingSchemes);
+    const fetchMarkingSchemas = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:8080/marking-schemes/"
+        );
+        if (Array.isArray(response.data)) {
+          setMakingSchemes(response.data);
+          console.log(response.data);
+        } else {
+          setMakingSchemes([]);
+        }
+      } catch (error) {
+        console.error("Error fetching marking schemes:", error);
+        setMakingSchemes([]);
+      }
+    };
+
+    fetchMarkingSchemas();
   }, []);
 
   const handleInputChange = (e) => {
@@ -41,23 +57,37 @@ const MakeMarkingSchemePage = () => {
         )
       );
       setEditMode(false);
+
     } else {
       setAnswerSchemes((prevSchemes) => [
         ...prevSchemes,
-        { id: Date.now(), ...newAnswer },
+        { questionNumber: Date.now(), ...newAnswer },
       ]);
     }
     setNewAnswer({
       question: "",
-      scheme: "",
-      marks: 0,
-      questionType: "direct",
+      correctAnswer: "",
       keywords: "",
+      allocatedMarks: 0,
+      evaluationType: "true",
     });
   };
 
-  const handleEdit = (id, question, scheme, marks, questionType, keywords) => {
-    setNewAnswer({ question, scheme, marks, questionType, keywords });
+  const handleEdit = (
+    id,
+    question,
+    correctAnswer,
+    keywords,
+    allocatedMarks,
+    evaluationType
+  ) => {
+    setNewAnswer({
+      question,
+      correctAnswer,
+      keywords,
+      allocatedMarks,
+      evaluationType,
+    });
     setEditMode(true);
     setEditId(id);
   };
@@ -68,25 +98,21 @@ const MakeMarkingSchemePage = () => {
     );
   };
 
-  const handleSubmitMakingScheme = () => {
-    if (editingSchemeId !== null) {
-      const updatedMakingSchemes = makingSchemes.map((scheme) =>
-        scheme.id === editingSchemeId
-          ? { ...scheme, name: makingSchemeName, schemes: [...answerSchemes] }
-          : scheme
+  const handleSubmitMakingScheme = async () => {
+    const newMakingScheme = {
+      markingSchemeId: Date.now(),
+      markingSchemeName:
+        makingSchemeName || `Marking Scheme ${makingSchemes.length + 1}`,
+      totalQuestions: answerSchemes.length,
+      questions: [...answerSchemes],
+    };
+
+    try {
+      // Send POST request to backend API
+      await axios.post(
+        "http://localhost:8080/marking-schemes/",
+        newMakingScheme
       );
-
-      setMakingSchemes(updatedMakingSchemes);
-      localStorage.setItem("makingSchemes", JSON.stringify(updatedMakingSchemes));
-      setEditingSchemeId(null);
-    } else {
-      const newMakingScheme = {
-        id: Date.now(),
-        name:
-          makingSchemeName || `Marking Scheme ${makingSchemes.length + 1}`,
-        schemes: [...answerSchemes],
-      };
-
       setMakingSchemes((prevMakingSchemes) => [
         ...prevMakingSchemes,
         newMakingScheme,
@@ -95,6 +121,8 @@ const MakeMarkingSchemePage = () => {
         "makingSchemes",
         JSON.stringify([...makingSchemes, newMakingScheme])
       );
+    } catch (error) {
+      console.error("Error saving marking scheme", error);
     }
 
     setAnswerSchemes([]);
@@ -102,17 +130,26 @@ const MakeMarkingSchemePage = () => {
   };
 
   const handleLoadMakingScheme = (scheme) => {
-    setEditingSchemeId(scheme.id);
-    setAnswerSchemes(scheme.schemes);
-    setMakingSchemeName(scheme.name);
+    setEditingSchemeId(scheme.markingSchemeId);
+    setAnswerSchemes(scheme.questions);
+    setMakingSchemeName(scheme.markingSchemeName);
   };
 
-  const handleDeleteMakingScheme = (id) => {
-    const updatedMakingSchemes = makingSchemes.filter(
-      (scheme) => scheme.id !== id
-    );
-    setMakingSchemes(updatedMakingSchemes);
-    localStorage.setItem("makingSchemes", JSON.stringify(updatedMakingSchemes));
+  const handleDeleteMakingScheme = async (id) => {
+    try {
+      // Send DELETE request to backend API
+      await axios.delete(`http://localhost:8080/marking-schemes/${id}`);
+      const updatedMakingSchemes = makingSchemes.filter(
+        (scheme) => scheme.markingSchemeId !== id
+      );
+      setMakingSchemes(updatedMakingSchemes);
+      localStorage.setItem(
+        "makingSchemes",
+        JSON.stringify(updatedMakingSchemes)
+      );
+    } catch (error) {
+      console.error("Error deleting marking scheme", error);
+    }
   };
 
   return (
@@ -121,7 +158,9 @@ const MakeMarkingSchemePage = () => {
       <div className="flex">
         {/* Left Panel - Questions List */}
         <div className="w-1/4 p-4 bg-white h-screen overflow-y-auto border-r-2 border-r-neutral">
-          <h2 className="text-h5 text-primaryBlue font-semibold mb-4">Questions</h2>
+          <h2 className="text-h5 text-primaryBlue font-semibold mb-4">
+            Questions
+          </h2>
           {answerSchemes.map((scheme, index) => (
             <div
               key={scheme.id}
@@ -131,20 +170,26 @@ const MakeMarkingSchemePage = () => {
                 {index + 1}. {scheme.question}
               </h3>
               <div className="flex justify-between">
-                <p className="font-normal text-body2">Type: {scheme.questionType}</p>
-                <p className="font-normal text-body2">Marks: {scheme.marks}</p>
+                <p className="font-normal text-body2">
+                  Type: {scheme.evaluationType ? "Direct" : "Essay"}
+                </p>
+                <p className="font-normal text-body2">
+                  Marks: {scheme.allocatedMarks}
+                </p>
               </div>
 
-              {scheme.questionType === "essay" && <p>Keywords: {scheme.keywords}</p>}
+              {scheme.evaluationType === "false" && (
+                <p>Keywords: {scheme.keywords}</p>
+              )}
 
               <button
                 onClick={() =>
                   handleEdit(
                     scheme.id,
                     scheme.question,
-                    scheme.scheme,
-                    scheme.marks,
-                    scheme.questionType,
+                    scheme.correctAnswer,
+                    scheme.allocatedMarks,
+                    scheme.evaluationType,
                     scheme.keywords
                   )
                 }
@@ -159,22 +204,24 @@ const MakeMarkingSchemePage = () => {
               >
                 🗑️
               </button>
-
-
             </div>
           ))}
         </div>
 
         {/* Middle Panel - Form */}
         <div className="w-2/4 p-8">
-          <h1 className="text-h4 font-semibold text-primaryBlue mb-4">Add Marking Schemes</h1>
-
-          
+          <h1 className="text-h4 font-semibold text-primaryBlue mb-4">
+            Add Marking Schemes
+          </h1>
 
           {/* Add Form */}
-          <form onSubmit={handleSubmit} className="mb-8 bg-white p-4 shadow-sm rounded-md border-2 border-gray-100">
+          <form
+            onSubmit={handleSubmit}
+            className="mb-8 bg-white p-4 shadow-sm rounded-md border-2 border-gray-100"
+          >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <p>Add Questions & Answers seperately</p><br/>
+              <p>Add Questions & Answers separately</p>
+              <br />
               <input
                 type="text"
                 name="question"
@@ -185,9 +232,9 @@ const MakeMarkingSchemePage = () => {
                 required
               />
               <textarea
-                name="scheme"
+                name="correctAnswer"
                 placeholder="Enter Answer Scheme"
-                value={newAnswer.scheme}
+                value={newAnswer.correctAnswer}
                 onChange={handleInputChange}
                 className="p-2 border border-gray-300 rounded-md w-full"
                 required
@@ -196,25 +243,25 @@ const MakeMarkingSchemePage = () => {
             <div className="flex gap-4 mt-4">
               <input
                 type="number"
-                name="marks"
+                name="allocatedMarks"
                 placeholder="Marks"
-                value={newAnswer.marks}
+                value={newAnswer.allocatedMarks}
                 onChange={handleInputChange}
                 className="p-2 border border-gray-300 rounded-md w-full"
                 required
               />
               <select
-                name="questionType"
-                value={newAnswer.questionType}
+                name="evaluationType"
+                value={newAnswer.evaluationType}
                 onChange={handleInputChange}
                 className="p-2 border border-gray-300 rounded-md"
               >
-                <option value="direct">Direct</option>
-                <option value="essay">Essay</option>
+                <option value="true">Direct</option>
+                <option value="false">Essay</option>
               </select>
             </div>
 
-            {newAnswer.questionType === "essay" && (
+            {newAnswer.evaluationType === "false" && (
               <input
                 type="text"
                 name="keywords"
@@ -225,43 +272,71 @@ const MakeMarkingSchemePage = () => {
               />
             )}
 
-            <button type="submit" className="bg-secondaryBlue text-white font-medium py-2 px-4 rounded-md mt-4">
+            <button
+              type="submit"
+              className="bg-secondaryBlue text-white font-medium py-2 px-4 rounded-md mt-4"
+            >
               {editMode ? "Save Changes" : "Add"}
             </button>
           </form>
-          {/* Button to Save Marking Scheme */}
 
+          {/* Button to Save Marking Scheme */}
           <div>
-            {/* Input for Marking Scheme Name */}
-            <p>Enter Marking Scheme Name</p><br/>
-          <input
-            type="text"
-            placeholder="Enter Marking Scheme Name"
-            value={makingSchemeName}
-            onChange={(e) => setMakingSchemeName(e.target.value)}
-            className="p-2 border border-gray-300 rounded-md w-full mb-4"
-          />
-            <button
-              onClick={handleSubmitMakingScheme}
-              className="bg-primaryBlue text-white py-2 px-4 rounded-md mt-4 mr-2">
-              Save Marking Scheme
-            </button>
-            <Link to="/upload-files" className="bg-primaryBlue text-white py-2 px-4 rounded-md mt-4 mr-2">
+            <p>Enter Marking Scheme Name</p>
+            <br />
+            <input
+              type="text"
+              placeholder="Enter Marking Scheme Name"
+              value={makingSchemeName}
+              onChange={(e) => setMakingSchemeName(e.target.value)}
+              className="p-2 border border-gray-300 rounded-md w-full mb-4"
+            />
+            {editMode ? (
+              <button
+                className="bg-primaryBlue text-white py-2 px-4 rounded-md mt-4 mr-2"
+              >
+                Edit Marking Scheme
+              </button>
+            ) : (
+              <button
+                onClick={handleSubmitMakingScheme}
+                className="bg-primaryBlue text-white py-2 px-4 rounded-md mt-4 mr-2"
+              >
+                Save Marking Scheme
+              </button>
+            )}
+            <Link
+              to="/upload-files"
+              className="bg-primaryBlue text-white py-2 px-4 rounded-md mt-4 mr-2"
+            >
               Next Step: Upload
             </Link>
           </div>
-
         </div>
 
-
-        {/* ✅ Right Panel - Saved Marking Schemes */}
+        {/* Right Panel - Saved Marking Schemes */}
         <div className="w-1/4 p-4 bg-white h-screen overflow-y-auto border-l-2 border-l-neutral">
-          <h2 className="text-h5 text-primaryBlue font-semibold mb-4">Saved Marking Schemes</h2>
+          <h2 className="text-h5 text-primaryBlue font-semibold mb-4">
+            Saved Marking Schemes
+          </h2>
           {makingSchemes.map((scheme) => (
-            <div key={scheme.id} className="p-4 bg-white shadow-md rounded-md mb-2">
-              <h3 className="font-bold">{scheme.name}</h3>
-              <button onClick={() => handleLoadMakingScheme(scheme)} className="mr-2 mt-2 bg-green-100 py-1 px-2 rounded-lg shadow-lg hover:bg-green-500 hover:shadow-xl transition-all duration-200">📂</button>
-              <button onClick={() => handleDeleteMakingScheme(scheme.id)} className="mr-2 bg-red-100 text-white py-1 px-2 rounded-lg shadow-lg hover:bg-red-500 hover:shadow-xl transition-all duration-200">🗑️</button>
+            <div
+              key={scheme.markingSchemeId}
+              className="p-4 bg-white shadow-md rounded-md mb-2"
+            >
+              <h3 className="font-bold">{scheme.markingSchemeName}</h3>
+              <button
+                onClick={() => handleLoadMakingScheme(scheme)}
+                className="mr-2 mt-2 bg-green-100 py-1 px-2 rounded-lg shadow-lg hover:bg-green-500 hover:shadow-xl transition-all duration-200"
+              >
+                📂
+              </button>
+              <button
+                onClick={() => handleDeleteMakingScheme(scheme.markingSchemeId)}
+                className="mr-2 bg-red-100 text-white py-1 px-2 rounded-lg shadow-lg hover:bg-red-500 hover:shadow-xl transition-all duration-200"
+              >
+                🗑️
+              </button>
             </div>
           ))}
         </div>

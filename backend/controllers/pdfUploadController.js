@@ -3,46 +3,55 @@ const path = require('path');
 const multer = require('multer');
 const pdfParse = require('pdf-parse');
 const StudentAnswer = require('../models/StudentAnswer');
-const MarkingScheme = require('../models/MarkingScheme'); // Import the MarkingScheme model
 
-const storage = multer.memoryStorage();
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadPath = path.join(__dirname, '../uploads/');
+        if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true }); // Create uploads folder if it doesn't exist
+        }
+        cb(null, uploadPath);
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${file.originalname}`);
+    },
+});
+
 const upload = multer({ storage: storage });
 
-exports.uploadPDFs = upload.array('pdfs');
+exports.uploadPDFs = upload.array('pdfs', 10); // Limit to 10 files at a time
 
 exports.parsePDFs = async (req, res) => {
     try {
-        // const { markingSchemeId } = req.body; // Assuming markingSchemeId is passed in the request body
-        // const markingScheme = await MarkingScheme.findOne({ markingSchemeId });
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ error: 'No PDF files uploaded' });
+        }
 
-        // if (!markingScheme) {
-        //   return res.status(404).json({ error: 'Marking scheme not found' });
-        // }
+        console.log('Files Uploaded:', req.files.map(file => file.filename));
 
-        const pdfs = req.files;
+        const results = [];
 
-        for (const pdf of pdfs) {
-            const data = await pdfParse(pdf.buffer);
+        for (const pdf of req.files) {
+            const pdfPath = path.join(__dirname, '../uploads/', pdf.filename);
+            const data = await pdfParse(fs.readFileSync(pdfPath)); // Read file from local storage
+
             const lines = data.text.split('\n');
-
             let currentQuestionNumber = 0;
             let currentAnswerText = '';
 
             const studentAnswer = new StudentAnswer({
-                fileName: pdf.originalname,
+                fileName: pdf.filename,
                 answers: [],
             });
 
             for (const line of lines) {
                 if (line.includes('.....')) {
-                    // Assume encountering a line with more than 5 dots indicates a new answer
-                    if (currentQuestionNumber > 0 && currentAnswerText !== '') {
+                    if (currentQuestionNumber > 0 && currentAnswerText.trim() !== '') {
                         studentAnswer.answers.push({
                             questionNumber: currentQuestionNumber,
-                            answerText: currentAnswerText,
+                            answerText: currentAnswerText.trim(),
                         });
                     }
-
                     currentQuestionNumber += 1;
                     currentAnswerText = '';
                 } else {
@@ -50,13 +59,23 @@ exports.parsePDFs = async (req, res) => {
                 }
             }
 
-            // Save the student's answer to the database
+            if (currentAnswerText.trim() !== '') {
+                studentAnswer.answers.push({
+                    questionNumber: currentQuestionNumber,
+                    answerText: currentAnswerText.trim(),
+                });
+            }
+
             await studentAnswer.save();
+            results.push(studentAnswer);
         }
 
-        res.status(200).json({ message: 'PDFs parsed and answers saved successfully' });
+        res.status(200).json({
+            message: 'PDFs saved, parsed, and answers stored successfully',
+            savedAnswers: results,
+        });
     } catch (error) {
-        console.error(error);
+        console.error('Error processing PDFs:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 };

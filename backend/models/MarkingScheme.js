@@ -7,6 +7,7 @@ const markingSchemeSchema = new mongoose.Schema({
   questions: [
     {
       questionNumber: { type: Number, required: true },
+      question: { type: String, required: true },
       correctAnswer: { type: String, required: true },
       keywords: { type: [String], required: true },
       allocatedMarks: { type: Number, required: true },
