@@ -1,23 +1,22 @@
 // LoginPage.js
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link,useNavigate } from 'react-router-dom';
 import bgImg from '../assets/bg-login.png';
 import evaluxIcon from '../assets/evalux icon 1.png';
 
 const LoginPage = () => {
+  const navigate = useNavigate();
   const handleLogin = () => {
-    // This is where you would handle authentication logic
-    // For now, let's just log a message to the console
+    navigate('/profile');
     console.log('Login button clicked. Authentication logic will go here.');
   };
 
   return (
     <div className="flex flex-col items-start justify-center h-screen overflow-hidden bg-cover bg-center p-16" style={{ backgroundImage: `url(${bgImg})` }}>
 
-      <div className="w-1/3 bg-white p-6 rounded-lg shadow-md ">
+      <div className="w-5/12 bg-white p-6 rounded-lg shadow-md ">
         <div className='flex justify-start items-start gap-4 mb-2'>
           <img src={evaluxIcon} alt="Evalux Icon" className='w-12' />
-
           <div className="text-h4 font-heading text-primaryBlue">Login</div>
         </div>
 
@@ -51,9 +50,9 @@ const LoginPage = () => {
           >
             Login
           </button>
-          <Link to="/signup" className=" text-primaryBlue hover:underline">
+          {/* <Link to="/signup" className=" text-primaryBlue hover:underline">
             Sign Up
-          </Link>
+          </Link> */}
         </div>
       </div>
     </div>

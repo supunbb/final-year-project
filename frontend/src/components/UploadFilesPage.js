@@ -1,7 +1,7 @@
 // src/components/UploadFilesPage.js
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import NavigationBar from './NavigationBar';
+import NavigationBar from './Navbar';
 
 const UploadFilesPage = () => {
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -9,8 +9,15 @@ const UploadFilesPage = () => {
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
-    setSelectedFiles(files);
-    setFileList(files.map(file => file.name));
+    // Filter only PDF files
+    const pdfFiles = files.filter(file => file.type === "application/pdf");
+    
+    if (pdfFiles.length > 0) {
+      setSelectedFiles(pdfFiles);
+      setFileList(pdfFiles.map(file => file.name));
+    } else {
+      alert("Please select only PDF files.");
+    }
   };
 
   const handleUpload = () => {
@@ -28,16 +35,19 @@ const UploadFilesPage = () => {
   };
 
   return (
-    <div className="container mx-auto p-8">
+    <div>
       <NavigationBar />
+    <div className="container mx-auto p-8">
+      
       <h1 className="text-4xl font-bold mb-8">Upload Files Page</h1>
 
       {/* File Input */}
       <div className="mb-4">
-        <label className="text-lg font-semibold mb-2">Choose Files:</label>
+        <label className="text-lg font-semibold mb-2">Choose PDF Files:</label>
         <input
           type="file"
           multiple
+          accept=".pdf"
           onChange={handleFileChange}
           className="border p-2 rounded-md"
         />
@@ -64,8 +74,6 @@ const UploadFilesPage = () => {
         Upload Files
       </button>
 
-
-
       {/* Evaluate Button */}
       <Link to={{
         pathname: '/evaluate',
@@ -75,6 +83,7 @@ const UploadFilesPage = () => {
           Evaluate
         </button>
       </Link>
+    </div>
     </div>
   );
 };
