@@ -25,14 +25,23 @@ exports.getAllMarkingSchemes = async (req, res) => {
 
 exports.updateMarkingScheme = async (req, res) => {
   const { id } = req.params; // Get the ID from URL params
+
   try {
-    const updatedMarkingScheme = await MarkingScheme.findByIdAndUpdate(id, req.body, { new: true });
+    // Find and update the marking scheme
+    const updatedMarkingScheme = await MarkingScheme.findByIdAndUpdate(
+      id, 
+      req.body, 
+      { new: true, runValidators: true } // Returns updated document & validates input
+    );
+
     if (!updatedMarkingScheme) {
       return res.status(404).json({ message: 'Marking Scheme not found' });
     }
-    res.status(200).json(updatedMarkingScheme);
+
+    res.status(200).json({ message: 'Marking Scheme updated successfully', updatedMarkingScheme });
   } catch (error) {
-    res.status(400).json({ message: 'Error updating marking scheme', error });
+    console.error("Error updating marking scheme:", error);
+    res.status(500).json({ message: 'Internal Server Error', error });
   }
 };
 

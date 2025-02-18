@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import NavigationBar from "./Navbar";
 import { Link } from "react-router-dom";
-import axios from "axios"; // Ensure you have axios installed
+import axios from "axios";
 
 const MakeMarkingSchemePage = () => {
   const [newAnswer, setNewAnswer] = useState({
@@ -27,7 +27,6 @@ const MakeMarkingSchemePage = () => {
         );
         if (Array.isArray(response.data)) {
           setMakingSchemes(response.data);
-          console.log("Schemes List: ", response.data);
         } else {
           setMakingSchemes([]);
         }
@@ -50,7 +49,6 @@ const MakeMarkingSchemePage = () => {
 
   const handleQuestionEdit = (e) => {
     e.preventDefault();
-    console.log(newAnswer);
     if (newAnswer.questionNumber) {
       setQuestionsList((prevSchemes) =>
         prevSchemes.map((scheme) =>
@@ -58,12 +56,11 @@ const MakeMarkingSchemePage = () => {
         )
       );
       setEdited(true);
-
-    } else if (!newAnswer.questionNumber){
-      if(editingSchemeId) setEdited(true);
+    } else if (!newAnswer.questionNumber) {
+      if (editingSchemeId) setEdited(true);
       setQuestionsList((prevSchemes) => [
         ...prevSchemes,
-        { questionNumber: Date.now(), ...newAnswer },
+        { questionNumber: prevSchemes.length + 1, ...newAnswer },
       ]);
     }
     setNewAnswer({
@@ -80,9 +77,11 @@ const MakeMarkingSchemePage = () => {
     setEditId(question._id);
   };
 
-  const handleDelete = (id) => {
-    setQuestionsList((prevSchemes) =>
-      prevSchemes.filter((scheme) => scheme.id !== id)
+  const handleDelete = (data) => {
+    setQuestionsList((prevList) =>
+      prevList.filter(
+        (question) => question.questionNumber !== data.questionNumber
+      )
     );
   };
 
@@ -122,16 +121,18 @@ const MakeMarkingSchemePage = () => {
       questions: [...questionsList],
     };
 
-    console.log("AAAAAAAAAAAAAAa", newMakingScheme);
+    const filteredSchemes = makingSchemes.filter(
+      (scheme) => scheme.markingSchemeId === newMakingScheme.markingSchemeId
+    );
 
     try {
       // Send POST request to backend API
       await axios.put(
-        `http://localhost:8080/marking-schemes/${editingSchemeId}`,
+        `http://localhost:8080/marking-schemes/${filteredSchemes[0]._id}`,
         newMakingScheme
       );
       setMakingSchemes((prevMakingSchemes) => [
-        ...prevMakingSchemes.filter(s=>s._id!==editingSchemeId),
+        ...prevMakingSchemes.filter((s) => s._id !== editingSchemeId),
         newMakingScheme,
       ]);
     } catch (error) {
@@ -150,7 +151,9 @@ const MakeMarkingSchemePage = () => {
     setMakingSchemeName(scheme.markingSchemeName);
   };
 
-  const handleDeleteMakingScheme = async (id) => {
+  const handleDeleteMakingScheme = async (scheme) => {
+    const id = scheme._id;
+
     try {
       // Send DELETE request to backend API
       await axios.delete(`http://localhost:8080/marking-schemes/${id}`);
@@ -179,7 +182,7 @@ const MakeMarkingSchemePage = () => {
           {questionsList.map((scheme, index) => (
             <div
               key={scheme._id}
-              className="p-4 bg-[red] shadow-sm rounded-md mb-2 border-2 border-gray-100"
+              className="p-4 bg-white shadow-sm rounded-md mb-2 border-2 border-gray-100"
             >
               <h3 className="font-semibold text-body1">
                 {index + 1}. {scheme.question}
@@ -198,16 +201,14 @@ const MakeMarkingSchemePage = () => {
               )}
 
               <button
-                onClick={() =>
-                  handleEdit(scheme)
-                }
+                onClick={() => handleEdit(scheme)}
                 className="mr-2 mt-2 bg-green-100 text-white py-1 px-2 rounded-lg shadow-lg hover:bg-green-500 hover:shadow-xl transition-all duration-200"
               >
                 ✏️
               </button>
 
               <button
-                onClick={() => handleDelete(scheme.id)}
+                onClick={() => handleDelete(scheme)}
                 className="mr-2 bg-red-100 text-white py-1 px-2 rounded-lg shadow-lg hover:bg-red-500 hover:shadow-xl transition-all duration-200"
               >
                 🗑️
@@ -298,13 +299,12 @@ const MakeMarkingSchemePage = () => {
               value={makingSchemeName}
               onChange={(e) => {
                 setMakingSchemeName(e.target.value);
-                setEdited(true)
               }}
               className="p-2 border border-gray-300 rounded-md w-full mb-4"
             />
             {newAnswer.questionNumber || edited ? (
               <button
-              onClick={handleEditMakingScheme}
+                onClick={handleEditMakingScheme}
                 className="bg-primaryBlue text-white py-2 px-4 rounded-md mt-4 mr-2"
               >
                 Edit Marking Scheme
@@ -344,7 +344,7 @@ const MakeMarkingSchemePage = () => {
                 📂
               </button>
               <button
-                onClick={() => handleDeleteMakingScheme(scheme.markingSchemeId)}
+                onClick={() => handleDeleteMakingScheme(scheme)}
                 className="mr-2 bg-red-100 text-white py-1 px-2 rounded-lg shadow-lg hover:bg-red-500 hover:shadow-xl transition-all duration-200"
               >
                 🗑️

@@ -11,7 +11,8 @@ const markingSchemeSchema = new mongoose.Schema({
       correctAnswer: { type: String, required: true },
       keywords: { type: [String], required: true },
       allocatedMarks: { type: Number, required: true },
-      evaluationType: { type: Boolean, required: true }, // 1 for direct, 0 for essay
+      evaluationType: { type: Boolean, required: true },
+      _id: { type: String},
     },
   ],
 });
