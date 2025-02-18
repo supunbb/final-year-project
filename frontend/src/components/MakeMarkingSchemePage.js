@@ -12,8 +12,8 @@ const MakeMarkingSchemePage = () => {
     evaluationType: "true",
   });
 
-  const [answerSchemes, setAnswerSchemes] = useState([]);
-  const [editMode, setEditMode] = useState(false);
+  const [questionsList, setQuestionsList] = useState([]);
+  const [edited, setEdited] = useState(false);
   const [editId, setEditId] = useState(null);
   const [makingSchemes, setMakingSchemes] = useState([]);
   const [editingSchemeId, setEditingSchemeId] = useState(null);
@@ -27,7 +27,7 @@ const MakeMarkingSchemePage = () => {
         );
         if (Array.isArray(response.data)) {
           setMakingSchemes(response.data);
-          console.log(response.data);
+          console.log("Schemes List: ", response.data);
         } else {
           setMakingSchemes([]);
         }
@@ -48,18 +48,20 @@ const MakeMarkingSchemePage = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleQuestionEdit = (e) => {
     e.preventDefault();
-    if (editMode) {
-      setAnswerSchemes((prevSchemes) =>
+    console.log(newAnswer);
+    if (newAnswer.questionNumber) {
+      setQuestionsList((prevSchemes) =>
         prevSchemes.map((scheme) =>
-          scheme.id === editId ? { ...scheme, ...newAnswer } : scheme
+          scheme._id === editId ? { ...scheme, ...newAnswer } : scheme
         )
       );
-      setEditMode(false);
+      setEdited(true);
 
-    } else {
-      setAnswerSchemes((prevSchemes) => [
+    } else if (!newAnswer.questionNumber){
+      if(editingSchemeId) setEdited(true);
+      setQuestionsList((prevSchemes) => [
         ...prevSchemes,
         { questionNumber: Date.now(), ...newAnswer },
       ]);
@@ -73,27 +75,13 @@ const MakeMarkingSchemePage = () => {
     });
   };
 
-  const handleEdit = (
-    id,
-    question,
-    correctAnswer,
-    keywords,
-    allocatedMarks,
-    evaluationType
-  ) => {
-    setNewAnswer({
-      question,
-      correctAnswer,
-      keywords,
-      allocatedMarks,
-      evaluationType,
-    });
-    setEditMode(true);
-    setEditId(id);
+  const handleEdit = (question) => {
+    setNewAnswer(question);
+    setEditId(question._id);
   };
 
   const handleDelete = (id) => {
-    setAnswerSchemes((prevSchemes) =>
+    setQuestionsList((prevSchemes) =>
       prevSchemes.filter((scheme) => scheme.id !== id)
     );
   };
@@ -103,8 +91,8 @@ const MakeMarkingSchemePage = () => {
       markingSchemeId: Date.now(),
       markingSchemeName:
         makingSchemeName || `Marking Scheme ${makingSchemes.length + 1}`,
-      totalQuestions: answerSchemes.length,
-      questions: [...answerSchemes],
+      totalQuestions: questionsList.length,
+      questions: [...questionsList],
     };
 
     try {
@@ -117,21 +105,48 @@ const MakeMarkingSchemePage = () => {
         ...prevMakingSchemes,
         newMakingScheme,
       ]);
-      localStorage.setItem(
-        "makingSchemes",
-        JSON.stringify([...makingSchemes, newMakingScheme])
-      );
     } catch (error) {
       console.error("Error saving marking scheme", error);
     }
 
-    setAnswerSchemes([]);
+    setQuestionsList([]);
+    setMakingSchemeName("");
+  };
+
+  const handleEditMakingScheme = async () => {
+    const newMakingScheme = {
+      markingSchemeId: editingSchemeId,
+      markingSchemeName:
+        makingSchemeName || `Marking Scheme ${makingSchemes.length + 1}`,
+      totalQuestions: questionsList.length,
+      questions: [...questionsList],
+    };
+
+    console.log("AAAAAAAAAAAAAAa", newMakingScheme);
+
+    try {
+      // Send POST request to backend API
+      await axios.put(
+        `http://localhost:8080/marking-schemes/${editingSchemeId}`,
+        newMakingScheme
+      );
+      setMakingSchemes((prevMakingSchemes) => [
+        ...prevMakingSchemes.filter(s=>s._id!==editingSchemeId),
+        newMakingScheme,
+      ]);
+    } catch (error) {
+      console.error("Error updating marking scheme", error);
+    }
+
+    setQuestionsList([]);
     setMakingSchemeName("");
   };
 
   const handleLoadMakingScheme = (scheme) => {
+    setNewAnswer({});
+    setEdited(false);
     setEditingSchemeId(scheme.markingSchemeId);
-    setAnswerSchemes(scheme.questions);
+    setQuestionsList(scheme.questions);
     setMakingSchemeName(scheme.markingSchemeName);
   };
 
@@ -161,10 +176,10 @@ const MakeMarkingSchemePage = () => {
           <h2 className="text-h5 text-primaryBlue font-semibold mb-4">
             Questions
           </h2>
-          {answerSchemes.map((scheme, index) => (
+          {questionsList.map((scheme, index) => (
             <div
-              key={scheme.id}
-              className="p-4 bg-white shadow-sm rounded-md mb-2 border-2 border-gray-100"
+              key={scheme._id}
+              className="p-4 bg-[red] shadow-sm rounded-md mb-2 border-2 border-gray-100"
             >
               <h3 className="font-semibold text-body1">
                 {index + 1}. {scheme.question}
@@ -184,14 +199,7 @@ const MakeMarkingSchemePage = () => {
 
               <button
                 onClick={() =>
-                  handleEdit(
-                    scheme.id,
-                    scheme.question,
-                    scheme.correctAnswer,
-                    scheme.allocatedMarks,
-                    scheme.evaluationType,
-                    scheme.keywords
-                  )
+                  handleEdit(scheme)
                 }
                 className="mr-2 mt-2 bg-green-100 text-white py-1 px-2 rounded-lg shadow-lg hover:bg-green-500 hover:shadow-xl transition-all duration-200"
               >
@@ -216,7 +224,7 @@ const MakeMarkingSchemePage = () => {
 
           {/* Add Form */}
           <form
-            onSubmit={handleSubmit}
+            onSubmit={handleQuestionEdit}
             className="mb-8 bg-white p-4 shadow-sm rounded-md border-2 border-gray-100"
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -276,7 +284,7 @@ const MakeMarkingSchemePage = () => {
               type="submit"
               className="bg-secondaryBlue text-white font-medium py-2 px-4 rounded-md mt-4"
             >
-              {editMode ? "Save Changes" : "Add"}
+              {newAnswer.questionNumber ? "Save Changes" : "Add"}
             </button>
           </form>
 
@@ -288,11 +296,15 @@ const MakeMarkingSchemePage = () => {
               type="text"
               placeholder="Enter Marking Scheme Name"
               value={makingSchemeName}
-              onChange={(e) => setMakingSchemeName(e.target.value)}
+              onChange={(e) => {
+                setMakingSchemeName(e.target.value);
+                setEdited(true)
+              }}
               className="p-2 border border-gray-300 rounded-md w-full mb-4"
             />
-            {editMode ? (
+            {newAnswer.questionNumber || edited ? (
               <button
+              onClick={handleEditMakingScheme}
                 className="bg-primaryBlue text-white py-2 px-4 rounded-md mt-4 mr-2"
               >
                 Edit Marking Scheme
