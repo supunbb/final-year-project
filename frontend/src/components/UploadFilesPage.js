@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import NavigationBar from "./Navbar";
 import axios from "axios";
+import EvaluateButton from "./EvaluateButton";
 
 const UploadFilesPage = () => {
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -11,6 +12,7 @@ const UploadFilesPage = () => {
   const [makingSchemes, setMakingSchemes] = useState([]);
   const [selectedSchemaId, setSelectedSchemaId] = useState(null);
   const [filteredSchema, setFilteredSchema] = useState([]);
+  const [evaluateResponse, setEvaluateResponse] = useState([]);
 
   const [studentAnswerResponse, setStudentAswerResponse] = useState([]);
 
@@ -71,6 +73,7 @@ const UploadFilesPage = () => {
       );
 
       setStudentAswerResponse(response.data.savedAnswers);
+      console.log(response.data);
       alert(response.data.message);
     } catch (error) {
       console.error("Upload Error:", error.response?.data || error.message);
@@ -94,7 +97,7 @@ const UploadFilesPage = () => {
         studentAnswers: studentAnswerResponse,
       });
 
-      // setEvaluationResult(response.data); // Store response data
+      setEvaluateResponse(response.data)
       console.log("Evaluation Successful:", response.data);
     } catch (error) {
       console.error("Error evaluating:", error);
@@ -102,11 +105,6 @@ const UploadFilesPage = () => {
     } finally {
       setUploading(false);
     }
-  };
-
-  const processPDFData = () => {
-    const processedData = "Processed data from PDFs";
-    return processedData;
   };
 
   const handleSelectSchema = (id) => {
@@ -173,6 +171,8 @@ const UploadFilesPage = () => {
             >
               Evaluate
             </button>
+
+            <EvaluateButton filteredSchema = {filteredSchema} evaluateResponse = {evaluateResponse}/>
           {/* </Link> */}
         </div>
         <div className="w-1/2 p-4 bg-white h-screen flex flex-col overflow-y-auto border-l-2 border-l-neutral gap-[5px]">

@@ -1,11 +1,12 @@
 const MarkingScheme = require("../models/MarkingScheme");
-const StudentAnswer = require("../models/StudentAnswer");
 const stringSimilarity = require("string-similarity");
 
 exports.evaluateAnswers = async (req, res) => {
   try {
     const { markingSchemeId, studentAnswers } = req.body;
     const markingScheme = await MarkingScheme.findOne({ markingSchemeId });
+
+    const studentName = studentAnswers[0].fileName.split("-")[1].split(".")[0];
 
     if (!markingScheme) {
       return res.status(404).json({ error: "Marking scheme not found" });
@@ -16,38 +17,47 @@ exports.evaluateAnswers = async (req, res) => {
     }
 
     const questions = markingScheme.questions;
-    console.log("Questions:", questions); // Debugging output
 
     let totalMarks = 0;
-    // const studentAnswers = await StudentAnswer.find({});
+    let answerList = [];
 
-    studentAnswers.forEach((studentAnswer) => {
-      console.log("studentAnswer.answers", studentAnswer.answers);
-      studentAnswer.answers.forEach((answerObject) => {
-        console.log("Question No: ", answerObject.questionNumber);
-        const question = questions.find(
-          (q) => q.questionNumber === answerObject.questionNumber
-        );
+      studentAnswers.forEach((studentAnswer) => {
 
-        if (!question) {
-          console.warn(
-            `Warning: No matching question found for questionNumber ${answerObject.questionNumber}`
+        studentAnswer.answers.forEach((answerObject) => {
+
+          const question = questions.find(
+            (q) => q.questionNumber === answerObject.questionNumber
           );
-          return; // Skip to the next answer
-        }
 
-        console.log("E type: ", question.evaluationType);
-        if (question.evaluationType) {
-          totalMarks += directEvaluate(answerObject, question);
-        } else {
-          totalMarks += essayEvaluate(answerObject, question);
-        }
-        console.log("..........................................");
+          if (!question) {
+            console.warn(
+              `Warning: No matching question found for questionNumber ${answerObject.questionNumber}`
+            );
+            return; // Skip to the next answer
+          }
+
+          
+          let marks = 0;
+          if (question.evaluationType) {
+            marks = directEvaluate(answerObject, question);
+          } else {
+            marks = essayEvaluate(answerObject, question);
+          }
+          totalMarks+=marks;
+          const a = {
+            questionNumber: answerObject.questionNumber,
+            studentAnswer: answerObject.answerText,
+            correctAnswer: question.correctAnswer,
+            keywords: question.keywords,
+            marks, 
+          }
+          answerList.push(a)
+          
+        });
       });
-    });
 
-    console.log("Total Marks:", totalMarks);
-    res.status(200).json({ totalMarks });
+
+    res.status(200).json({ studentName, totalMarks, answerList });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -56,43 +66,37 @@ exports.evaluateAnswers = async (req, res) => {
 
 const directEvaluate = (studentAnswer, markingSchemeAnswer) => {
   let correctAnswer = markingSchemeAnswer.correctAnswer;
-  console.log(
-    "D - studentAnswer ",
-    studentAnswer.answerText,
-    "Correct Answer ",
-    correctAnswer
-  );
 
   let marks = studentAnswer.answerText
     .toLowerCase()
     .includes(correctAnswer.toLowerCase())
     ? markingSchemeAnswer.allocatedMarks
     : 0;
-  console.log("D Marks ", marks);
+
   return marks;
 };
 
 const keywordEvaluate = (studentAnswerObject, markingSchemeAnswerObject) => {
   let studentAnswer = studentAnswerObject.answerText.toLowerCase();
-  let keywords = markingSchemeAnswerObject.keywords[0].split(',').map(s => s.trim());
-  console.log("K - studentAnswer ", studentAnswer);
-  console.log("keywords ", keywords);
+  let keywords = markingSchemeAnswerObject.keywords[0]
+    .split(",")
+    .map((s) => s.trim());
   let matchCount = 0;
 
   for (let i = 0; i < keywords.length; i++) {
     let m = studentAnswer.toLowerCase().includes(keywords[i].toLowerCase());
-    console.log("K Eval ", m);
+
     if (m) matchCount++;
   }
-  console.log(matchCount, markingSchemeAnswerObject.allocatedMarks);
+
   let marks =
     markingSchemeAnswerObject.allocatedMarks * (matchCount / keywords.length);
-  console.log("K Eval Marks ", marks);
+
   return marks;
 };
 
 const essayEvaluate = (studentAnswer, markingSchemeAnswer) => {
-  console.log("E - studentAnswer ", studentAnswer.answerText);
+
   let keywordMarks = keywordEvaluate(studentAnswer, markingSchemeAnswer);
   let answerText = studentAnswer.answerText;
   let correctAnswer = markingSchemeAnswer.correctAnswer;
@@ -100,9 +104,9 @@ const essayEvaluate = (studentAnswer, markingSchemeAnswer) => {
   let essayEvaluateScore =
     Math.floor(stringSimilarity.compareTwoStrings(answerText, correctAnswer)) *
     100;
-  console.log("E Eval ", essayEvaluateScore);
+
 
   let marks = Math.floor((keywordMarks + essayEvaluateScore) / 2);
-  console.log("E Total ", marks);
+
   return marks;
 };

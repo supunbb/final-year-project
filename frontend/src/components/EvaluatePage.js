@@ -1,9 +1,6 @@
-  
-// EvaluatePage.js
-
 import React, { useState, useEffect } from 'react';
 import ResultDetail from './ResultDetail'; // Adjust the import path
-import NavigationBar from './NavigationBar';
+import NavigationBar from './Navbar';
 
 const EvaluatePage = () => {
   const [sessions, setSessions] = useState([]);
@@ -11,9 +8,6 @@ const EvaluatePage = () => {
   const [results, setResults] = useState([]);
 
   useEffect(() => {
-    // Fetch sessions and results data or load from local storage
-    // Update the state variables (sessions and results) accordingly
-    // For simplicity, I'm using static data here
 
     const staticSessions = [
       { id: 1, name: 'Session 1' },
@@ -39,7 +33,7 @@ const EvaluatePage = () => {
 
   return (
     
-    <div className="container mx-auto p-8">
+    <div>
     <NavigationBar/>
       <h1 className="text-4xl font-bold mb-8">Evaluate Page</h1>
 
