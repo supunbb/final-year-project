@@ -4,20 +4,18 @@ const StudentAnswer = require("../models/StudentAnswer");
 
 exports.evaluateAnswers = async (req, res) => {
   try {
-    const { markingSchemeId, studentAnswersId: studentAnswersIds } = req.body;
+    const { markingSchemeId, studentAnswersIds } = req.body;
     const markingScheme = await MarkingScheme.findOne({ markingSchemeId });
-    const studentAnswers = studentAnswersIds.map(async aid=>({answeId: aid, studentAnswer: await StudentAnswer.findById(aid)}));
 
     console.log(
       "markingSchemeId, studentAnswersId",
       markingSchemeId,
-      studentAnswersIds,
-      studentAnswers
+      studentAnswersIds
     );
+    
+    const marksList = await Promise.all(studentAnswersIds.map(async aid=>{
+      const sa = await StudentAnswer.findById(aid)
 
-    let marksList = [];
-
-    studentAnswers.forEach(sa=>{
       const studentName = sa.fileName.split("-")[1].split(".")[0];
   
       if (!markingScheme) {
@@ -62,8 +60,8 @@ exports.evaluateAnswers = async (req, res) => {
         answerList.push(a);
       });
   
-      marksList.push({ _id: sa._id, fileName, studentName, totalMarks, answerList });
-    })
+      return { _id: sa._id, fileName, studentName, totalMarks, answerList };
+    }));
 
     res.status(200).json(marksList);
   } catch (error) {
