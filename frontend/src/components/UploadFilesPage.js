@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import NavigationBar from "./Navbar";
 import axios from "axios";
 import { EvaluationContext } from "../context/EvaluationContext";
@@ -14,6 +14,8 @@ const UploadFilesPage = () => {
   const [selectedSchemaId, setSelectedSchemaId] = useState(null);
   const [filteredSchema, setFilteredSchema] = useState([]);
   const [studentAnswerResponse, setStudentAswerResponse] = useState([]);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchMarkingSchemas = async () => {
@@ -85,6 +87,7 @@ const UploadFilesPage = () => {
 
       setEvaluationData(response.data);
       console.log("Evaluation Successful:", response.data);
+      navigate('/evaluate');
     } catch (error) {
       console.error("Error evaluating:", error);
       alert("Evaluation failed. Please try again.");
@@ -148,7 +151,6 @@ const UploadFilesPage = () => {
           </button>
 
           {/* Evaluate Button */}
-          <Link to="/evaluate">
             <button
               className="w-full mt-4 py-2 px-4 text-lg font-semibold text-white bg-green-500 hover:bg-green-600 rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed transition duration-300"
               disabled={filteredSchema.length === 0}
@@ -156,7 +158,6 @@ const UploadFilesPage = () => {
             >
               Evaluate
             </button>
-          </Link>
         </div>
 
         {/* Marking Schemes Section */}
