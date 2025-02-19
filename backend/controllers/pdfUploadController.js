@@ -66,8 +66,8 @@ exports.parsePDFs = async (req, res) => {
                 });
             }
 
-            await studentAnswer.save();
-            results.push(studentAnswer);
+            const answer = await studentAnswer.save();
+            results.push(answer);
         }
 
         res.status(200).json({

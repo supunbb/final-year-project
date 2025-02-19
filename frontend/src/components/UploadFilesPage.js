@@ -59,7 +59,7 @@ const UploadFilesPage = () => {
         { headers: { "Content-Type": "multipart/form-data" } }
       );
 
-      setStudentAswerResponse(response.data.savedAnswers);
+      setStudentAswerResponse(response.data.savedAnswers[0]);
       alert(response.data.message);
     } catch (error) {
       console.error("Upload Error:", error.response?.data || error.message);
@@ -76,10 +76,11 @@ const UploadFilesPage = () => {
     }
 
     setUploading(true);
+    console.log(studentAnswerResponse);
     try {
       const response = await axios.post("http://localhost:8080/evaluation", {
         markingSchemeId: filteredSchema[0]?.markingSchemeId,
-        studentAnswers: studentAnswerResponse,
+        studentAnswersId: studentAnswerResponse._id,
       });
 
       setEvaluationData(response.data);
@@ -94,7 +95,9 @@ const UploadFilesPage = () => {
 
   const handleSelectSchema = (id) => {
     setSelectedSchemaId(id);
-    setFilteredSchema(makingSchemes.filter((scheme) => scheme.markingSchemeId === id));
+    setFilteredSchema(
+      makingSchemes.filter((scheme) => scheme.markingSchemeId === id)
+    );
   };
 
   return (
@@ -103,7 +106,9 @@ const UploadFilesPage = () => {
       <div className="flex flex-col md:flex-row justify-between p-6 gap-6">
         {/* Upload Section */}
         <div className="w-full md:w-1/2 bg-white p-6 rounded-lg shadow-lg">
-          <h1 className="text-3xl font-bold mb-6 text-gray-800">Upload Files</h1>
+          <h1 className="text-3xl font-bold mb-6 text-gray-800">
+            Upload Files
+          </h1>
 
           {/* File Upload Button */}
           <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-400 rounded-lg text-gray-600 cursor-pointer hover:bg-gray-50 transition duration-300">
@@ -156,7 +161,9 @@ const UploadFilesPage = () => {
 
         {/* Marking Schemes Section */}
         <div className="w-full md:w-1/2 bg-white p-6 rounded-lg shadow-lg">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">Marking Schemes</h2>
+          <h2 className="text-xl font-bold text-gray-800 mb-4">
+            Marking Schemes
+          </h2>
 
           {/* Marking Schemes List */}
           <div className="h-96 overflow-y-auto border border-gray-300 rounded-lg p-4">

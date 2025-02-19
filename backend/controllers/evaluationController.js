@@ -1,12 +1,21 @@
 const MarkingScheme = require("../models/MarkingScheme");
 const stringSimilarity = require("string-similarity");
+const StudentAnswer = require("../models/StudentAnswer");
 
 exports.evaluateAnswers = async (req, res) => {
   try {
-    const { markingSchemeId, studentAnswers } = req.body;
+    const { markingSchemeId, studentAnswersId } = req.body;
     const markingScheme = await MarkingScheme.findOne({ markingSchemeId });
+    const studentAnswers = await StudentAnswer.findById(studentAnswersId);
 
-    const studentName = studentAnswers[0].fileName.split("-")[1].split(".")[0];
+    console.log(
+      "markingSchemeId, studentAnswersId",
+      markingSchemeId,
+      studentAnswersId,
+      studentAnswers
+    );
+
+    const studentName = studentAnswers.fileName.split("-")[1].split(".")[0];
 
     if (!markingScheme) {
       return res.status(404).json({ error: "Marking scheme not found" });
@@ -21,41 +30,34 @@ exports.evaluateAnswers = async (req, res) => {
     let totalMarks = 0;
     let answerList = [];
 
-      studentAnswers.forEach((studentAnswer) => {
+    studentAnswers.answers.forEach((answerObject) => {
+      const question = questions.find(
+        (q) => q.questionNumber === answerObject.questionNumber
+      );
 
-        studentAnswer.answers.forEach((answerObject) => {
+      if (!question) {
+        console.warn(
+          `Warning: No matching question found for questionNumber ${answerObject.questionNumber}`
+        );
+        return; // Skip to the next answer
+      }
 
-          const question = questions.find(
-            (q) => q.questionNumber === answerObject.questionNumber
-          );
-
-          if (!question) {
-            console.warn(
-              `Warning: No matching question found for questionNumber ${answerObject.questionNumber}`
-            );
-            return; // Skip to the next answer
-          }
-
-          
-          let marks = 0;
-          if (question.evaluationType) {
-            marks = directEvaluate(answerObject, question);
-          } else {
-            marks = essayEvaluate(answerObject, question);
-          }
-          totalMarks+=marks;
-          const a = {
-            questionNumber: answerObject.questionNumber,
-            studentAnswer: answerObject.answerText,
-            correctAnswer: question.correctAnswer,
-            keywords: question.keywords,
-            marks, 
-          }
-          answerList.push(a)
-          
-        });
-      });
-
+      let marks = 0;
+      if (question.evaluationType) {
+        marks = directEvaluate(answerObject, question);
+      } else {
+        marks = essayEvaluate(answerObject, question);
+      }
+      totalMarks += marks;
+      const a = {
+        questionNumber: answerObject.questionNumber,
+        studentAnswer: answerObject.answerText,
+        correctAnswer: question.correctAnswer,
+        keywords: question.keywords,
+        marks,
+      };
+      answerList.push(a);
+    });
 
     res.status(200).json({ studentName, totalMarks, answerList });
   } catch (error) {
@@ -96,7 +98,6 @@ const keywordEvaluate = (studentAnswerObject, markingSchemeAnswerObject) => {
 };
 
 const essayEvaluate = (studentAnswer, markingSchemeAnswer) => {
-
   let keywordMarks = keywordEvaluate(studentAnswer, markingSchemeAnswer);
   let answerText = studentAnswer.answerText;
   let correctAnswer = markingSchemeAnswer.correctAnswer;
@@ -104,7 +105,6 @@ const essayEvaluate = (studentAnswer, markingSchemeAnswer) => {
   let essayEvaluateScore =
     Math.floor(stringSimilarity.compareTwoStrings(answerText, correctAnswer)) *
     100;
-
 
   let marks = Math.floor((keywordMarks + essayEvaluateScore) / 2);
 
