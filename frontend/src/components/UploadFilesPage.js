@@ -59,7 +59,7 @@ const UploadFilesPage = () => {
         { headers: { "Content-Type": "multipart/form-data" } }
       );
 
-      setStudentAswerResponse(response.data.savedAnswers[0]);
+      setStudentAswerResponse(response.data.savedAnswers);
       alert(response.data.message);
     } catch (error) {
       console.error("Upload Error:", error.response?.data || error.message);
@@ -80,7 +80,7 @@ const UploadFilesPage = () => {
     try {
       const response = await axios.post("http://localhost:8080/evaluation", {
         markingSchemeId: filteredSchema[0]?.markingSchemeId,
-        studentAnswersId: studentAnswerResponse._id,
+        studentAnswersIds: studentAnswerResponse.map(r=>r._id),
       });
 
       setEvaluationData(response.data);

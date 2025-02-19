@@ -4,62 +4,68 @@ const StudentAnswer = require("../models/StudentAnswer");
 
 exports.evaluateAnswers = async (req, res) => {
   try {
-    const { markingSchemeId, studentAnswersId } = req.body;
+    const { markingSchemeId, studentAnswersId: studentAnswersIds } = req.body;
     const markingScheme = await MarkingScheme.findOne({ markingSchemeId });
-    const studentAnswers = await StudentAnswer.findById(studentAnswersId);
+    const studentAnswers = studentAnswersIds.map(async aid=>({answeId: aid, studentAnswer: await StudentAnswer.findById(aid)}));
 
     console.log(
       "markingSchemeId, studentAnswersId",
       markingSchemeId,
-      studentAnswersId,
+      studentAnswersIds,
       studentAnswers
     );
 
-    const studentName = studentAnswers.fileName.split("-")[1].split(".")[0];
+    let marksList = [];
 
-    if (!markingScheme) {
-      return res.status(404).json({ error: "Marking scheme not found" });
-    }
-
-    if (!markingScheme.questions || !Array.isArray(markingScheme.questions)) {
-      return res.status(400).json({ error: "Invalid marking scheme data" });
-    }
-
-    const questions = markingScheme.questions;
-
-    let totalMarks = 0;
-    let answerList = [];
-
-    studentAnswers.answers.forEach((answerObject) => {
-      const question = questions.find(
-        (q) => q.questionNumber === answerObject.questionNumber
-      );
-
-      if (!question) {
-        console.warn(
-          `Warning: No matching question found for questionNumber ${answerObject.questionNumber}`
+    studentAnswers.forEach(sa=>{
+      const studentName = sa.fileName.split("-")[1].split(".")[0];
+  
+      if (!markingScheme) {
+        return res.status(404).json({ error: "Marking scheme not found" });
+      }
+  
+      if (!markingScheme.questions || !Array.isArray(markingScheme.questions)) {
+        return res.status(400).json({ error: "Invalid marking scheme data" });
+      }
+  
+      const questions = markingScheme.questions;
+  
+      let totalMarks = 0;
+      let answerList = [];
+  
+      sa.answers.forEach((answerObject) => {
+        const question = questions.find(
+          (q) => q.questionNumber === answerObject.questionNumber
         );
-        return; // Skip to the next answer
-      }
+  
+        if (!question) {
+          console.warn(
+            `Warning: No matching question found for questionNumber ${answerObject.questionNumber}`
+          );
+          return; // Skip to the next answer
+        }
+  
+        let marks = 0;
+        if (question.evaluationType) {
+          marks = directEvaluate(answerObject, question);
+        } else {
+          marks = essayEvaluate(answerObject, question);
+        }
+        totalMarks += marks;
+        const a = {
+          questionNumber: answerObject.questionNumber,
+          studentAnswer: answerObject.answerText,
+          correctAnswer: question.correctAnswer,
+          keywords: question.keywords,
+          marks,
+        };
+        answerList.push(a);
+      });
+  
+      marksList.push({ _id: sa._id, fileName, studentName, totalMarks, answerList });
+    })
 
-      let marks = 0;
-      if (question.evaluationType) {
-        marks = directEvaluate(answerObject, question);
-      } else {
-        marks = essayEvaluate(answerObject, question);
-      }
-      totalMarks += marks;
-      const a = {
-        questionNumber: answerObject.questionNumber,
-        studentAnswer: answerObject.answerText,
-        correctAnswer: question.correctAnswer,
-        keywords: question.keywords,
-        marks,
-      };
-      answerList.push(a);
-    });
-
-    res.status(200).json({ studentName, totalMarks, answerList });
+    res.status(200).json(marksList);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
