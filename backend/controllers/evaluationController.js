@@ -12,57 +12,69 @@ exports.evaluateAnswers = async (req, res) => {
       markingSchemeId,
       studentAnswersIds
     );
-    
-    const marksList = await Promise.all(studentAnswersIds.map(async aid=>{
-      const sa = await StudentAnswer.findById(aid)
-      console.log("AAAAAA", sa.fileName);
 
-      const studentName = sa.fileName.split("-")[1].split(".")[0];
-  
-      if (!markingScheme) {
-        return res.status(404).json({ error: "Marking scheme not found" });
-      }
-  
-      if (!markingScheme.questions || !Array.isArray(markingScheme.questions)) {
-        return res.status(400).json({ error: "Invalid marking scheme data" });
-      }
-  
-      const questions = markingScheme.questions;
-  
-      let totalMarks = 0;
-      let answerList = [];
-  
-      sa.answers.forEach(async (answerObject) => {
-        const question = questions.find(
-          (q) => q.questionNumber === answerObject.questionNumber
+    const marksList = await Promise.all(
+      studentAnswersIds.map(async (aid) => {
+        const sa = await StudentAnswer.findById(aid);
+        const studentName = sa.fileName.split("-")[1].split(".")[0];
+
+        if (!markingScheme) {
+          return res.status(404).json({ error: "Marking scheme not found" });
+        }
+
+        if (
+          !markingScheme.questions ||
+          !Array.isArray(markingScheme.questions)
+        ) {
+          return res.status(400).json({ error: "Invalid marking scheme data" });
+        }
+
+        const questions = markingScheme.questions;
+
+        let totalMarks = 0;
+        let answerList = [];
+
+        await Promise.all(
+          sa.answers.map(async (answerObject) => {
+            const question = questions.find(
+              (q) => q.questionNumber === answerObject.questionNumber
+            );
+
+            if (!question) {
+              console.warn(
+                `Warning: No matching question found for questionNumber ${answerObject.questionNumber}`
+              );
+              return; // Skip to the next answer
+            }
+
+            let marks = 0;
+            if (question.evaluationType) {
+              marks = directEvaluate(answerObject, question);
+            } else {
+              marks = await essayEvaluate(answerObject, question);
+            }
+            totalMarks += marks;
+            console.log(marks, totalMarks);
+            const a = {
+              questionNumber: answerObject.questionNumber,
+              studentAnswer: answerObject.answerText,
+              correctAnswer: question.correctAnswer,
+              keywords: question.keywords,
+              marks,
+            };
+            answerList.push(a);
+          })
         );
-  
-        if (!question) {
-          console.warn(
-            `Warning: No matching question found for questionNumber ${answerObject.questionNumber}`
-          );
-          return; // Skip to the next answer
-        }
-  
-        let marks = 0;
-        if (question.evaluationType) {
-          marks = directEvaluate(answerObject, question);
-        } else {
-          marks = await essayEvaluate(answerObject, question);
-        }
-        totalMarks += marks;
-        const a = {
-          questionNumber: answerObject.questionNumber,
-          studentAnswer: answerObject.answerText,
-          correctAnswer: question.correctAnswer,
-          keywords: question.keywords,
-          marks,
+
+        return {
+          _id: sa._id,
+          fileName: sa.fileName,
+          studentName,
+          totalMarks,
+          answerList,
         };
-        answerList.push(a);
-      });
-  
-      return { _id: sa._id, fileName: sa.fileName, studentName, totalMarks, answerList };
-    }));
+      })
+    );
 
     res.status(200).json(marksList);
   } catch (error) {
@@ -106,30 +118,25 @@ const essayEvaluate = async (studentAnswer, markingSchemeAnswer) => {
   let keywordMarks = keywordEvaluate(studentAnswer, markingSchemeAnswer);
   let answerText = studentAnswer.answerText;
   let correctAnswer = markingSchemeAnswer.correctAnswer;
-  
+  let essayEvaluateScore = 0;
+
   const url = `https://twinword-text-similarity-v1.p.rapidapi.com/similarity/?text1=${answerText}&text2=${correctAnswer}`;
-
   const options = {
-	method: 'GET',
-	headers: {
-		'x-rapidapi-key': 'f65f9d288dmshc7237f422f663b4p120364jsnea1457252e8b',
-		'x-rapidapi-host': 'twinword-text-similarity-v1.p.rapidapi.com'
-	  }
+    method: "GET",
+    headers: {
+      "x-rapidapi-key": "f65f9d288dmshc7237f422f663b4p120364jsnea1457252e8b",
+      "x-rapidapi-host": "twinword-text-similarity-v1.p.rapidapi.com",
+    },
   };
-
   try {
+    console.log(url);
     const response = await fetch(url, options);
-    const result = await response.text();
-    console.log(result);
+    const result = await response.json();
+    essayEvaluateScore = Math.floor(result.similarity * 100);
+    console.log(essayEvaluateScore);
   } catch (error) {
     console.error(error);
   }
-
-  let essayEvaluateScore =
-    Math.floor(stringSimilarity.compareTwoStrings(answerText, correctAnswer)) *
-    100;
-
-  let marks = Math.floor((keywordMarks + essayEvaluateScore) / 2);
-
-  return marks;
+  console.log(essayEvaluateScore);
+  return Math.floor((keywordMarks + essayEvaluateScore) / 2);
 };
