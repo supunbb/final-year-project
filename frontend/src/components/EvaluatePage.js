@@ -8,7 +8,13 @@ const EvaluatePage = () => {
 
   // Ensure evaluationData is an array
   if (!Array.isArray(evaluationData)) {
-    return <p>No evaluation data available.</p>;
+    return (<>
+      <NavigationBar />
+      <div className="min-h-screen flex items-center justify-center bg-gray-100 text-gray-700 text-lg font-semibold">
+    <p className="bg-white px-6 py-3 shadow-md rounded-lg">No evaluation data available.</p>
+  </div>
+    </>)
+  ;
   }
 
   return (
