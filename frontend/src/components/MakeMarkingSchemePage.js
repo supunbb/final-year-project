@@ -274,7 +274,7 @@ const MakeMarkingSchemePage = () => {
               <input
                 type="text"
                 name="keywords"
-                placeholder="Enter Keywords"
+                placeholder="Enter Keywords (Separated by commas)"
                 value={newAnswer.keywords}
                 onChange={handleInputChange}
                 className="p-2 border border-gray-300 rounded-md w-full mt-4"
