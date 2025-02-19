@@ -1,19 +1,18 @@
-// src/components/UploadFilesPage.js
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Link } from "react-router-dom";
 import NavigationBar from "./Navbar";
 import axios from "axios";
-import EvaluateButton from "./EvaluateButton";
+import { EvaluationContext } from "../context/EvaluationContext";
 
 const UploadFilesPage = () => {
+  const { setEvaluationData } = useContext(EvaluationContext);
+
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [fileList, setFileList] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [makingSchemes, setMakingSchemes] = useState([]);
   const [selectedSchemaId, setSelectedSchemaId] = useState(null);
   const [filteredSchema, setFilteredSchema] = useState([]);
-  const [evaluateResponse, setEvaluateResponse] = useState([]);
-
   const [studentAnswerResponse, setStudentAswerResponse] = useState([]);
 
   useEffect(() => {
@@ -22,17 +21,12 @@ const UploadFilesPage = () => {
         const response = await axios.get(
           "http://localhost:8080/marking-schemes/"
         );
-        if (Array.isArray(response.data)) {
-          setMakingSchemes(response.data);
-        } else {
-          setMakingSchemes([]);
-        }
+        setMakingSchemes(Array.isArray(response.data) ? response.data : []);
       } catch (error) {
         console.error("Error fetching marking schemes:", error);
         setMakingSchemes([]);
       }
     };
-
     fetchMarkingSchemas();
   }, []);
 
@@ -55,25 +49,17 @@ const UploadFilesPage = () => {
     }
 
     setUploading(true);
-
     const formData = new FormData();
-    selectedFiles.forEach((file) => {
-      formData.append("pdfs", file);
-    });
+    selectedFiles.forEach((file) => formData.append("pdfs", file));
 
     try {
       const response = await axios.post(
         "http://localhost:8080/pdf-upload",
         formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
+        { headers: { "Content-Type": "multipart/form-data" } }
       );
 
       setStudentAswerResponse(response.data.savedAnswers);
-      console.log(response.data);
       alert(response.data.message);
     } catch (error) {
       console.error("Upload Error:", error.response?.data || error.message);
@@ -90,14 +76,13 @@ const UploadFilesPage = () => {
     }
 
     setUploading(true);
-
     try {
       const response = await axios.post("http://localhost:8080/evaluation", {
         markingSchemeId: filteredSchema[0]?.markingSchemeId,
         studentAnswers: studentAnswerResponse,
       });
 
-      setEvaluateResponse(response.data)
+      setEvaluationData(response.data);
       console.log("Evaluation Successful:", response.data);
     } catch (error) {
       console.error("Error evaluating:", error);
@@ -109,36 +94,34 @@ const UploadFilesPage = () => {
 
   const handleSelectSchema = (id) => {
     setSelectedSchemaId(id);
-    setFilteredSchema(
-      makingSchemes.filter((scheme) => scheme.markingSchemeId === id)
-    );
+    setFilteredSchema(makingSchemes.filter((scheme) => scheme.markingSchemeId === id));
   };
 
   return (
-    <div>
+    <div className="min-h-screen bg-gray-100">
       <NavigationBar />
-      <div className="w-full flex flex-row justify-evenly">
-        <div className="container w-1/2 mx-auto p-8">
-          <h1 className="text-4xl font-bold mb-8">Upload Files Page</h1>
+      <div className="flex flex-col md:flex-row justify-between p-6 gap-6">
+        {/* Upload Section */}
+        <div className="w-full md:w-1/2 bg-white p-6 rounded-lg shadow-lg">
+          <h1 className="text-3xl font-bold mb-6 text-gray-800">Upload Files</h1>
 
-          <div className="w-full relative inline-block overflow-hidden">
-            <label className="w-1/2 h-32 flex items-center justify-center border-2 border-dotted border-gray-500 text-gray-500 bg-white rounded-lg text-lg font-bold cursor-pointer">
-              Upload a file
-              <input
-                type="file"
-                multiple
-                accept=".pdf"
-                onChange={handleFileChange}
-                className="absolute left-0 top-0 opacity-0 w-full h-full cursor-pointer"
-              />
-            </label>
-          </div>
+          {/* File Upload Button */}
+          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-400 rounded-lg text-gray-600 cursor-pointer hover:bg-gray-50 transition duration-300">
+            <span className="font-semibold text-lg">Click to Upload PDFs</span>
+            <input
+              type="file"
+              multiple
+              accept=".pdf"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+          </label>
 
-          {/* Display Selected Files List */}
+          {/* Selected Files */}
           {fileList.length > 0 && (
-            <div className="mb-4">
-              <p className="text-lg font-semibold mb-2">Selected Files:</p>
-              <ul className="list-disc pl-6">
+            <div className="mt-4 p-4 bg-gray-50 border border-gray-300 rounded-lg">
+              <h2 className="font-semibold text-lg">Selected Files:</h2>
+              <ul className="list-disc pl-6 text-gray-700 mt-2">
                 {fileList.map((fileName, index) => (
                   <li key={index}>{fileName}</li>
                 ))}
@@ -149,50 +132,53 @@ const UploadFilesPage = () => {
           {/* Upload Button */}
           <button
             onClick={handleUpload}
-            className={`bg-blue-500 text-white py-2 px-4 rounded-md ${
-              uploading ? "bg-gray-400 disabled:cursor-not-allowed" : ""
+            className={`w-full mt-4 py-2 px-4 text-lg font-semibold text-white rounded-lg transition duration-300 ${
+              uploading
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-500 hover:bg-blue-600"
             }`}
-            disabled={selectedFiles.length === 0 || uploading}
+            disabled={uploading || selectedFiles.length === 0}
           >
             {uploading ? "Uploading..." : "Upload Files"}
           </button>
 
           {/* Evaluate Button */}
-          {/* <Link
-            to={{
-              pathname: "/evaluate",
-              state: { processedData: processPDFData() },
-            }}
-          > */}
+          <Link to="/evaluate">
             <button
-              className="bg-green-500 text-white py-2 px-4 rounded-md mt-4 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="w-full mt-4 py-2 px-4 text-lg font-semibold text-white bg-green-500 hover:bg-green-600 rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed transition duration-300"
               disabled={filteredSchema.length === 0}
               onClick={handleEvaluate}
             >
               Evaluate
             </button>
-
-            <EvaluateButton filteredSchema = {filteredSchema} evaluateResponse = {evaluateResponse}/>
-          {/* </Link> */}
+          </Link>
         </div>
-        <div className="w-1/2 p-4 bg-white h-screen flex flex-col overflow-y-auto border-l-2 border-l-neutral gap-[5px]">
-          <h2 className="text-h5 text-primaryBlue font-semibold mb-4">
-            Marking Schemes
-          </h2>
-          {makingSchemes.map((scheme) => (
-            <button
-              key={scheme.markingSchemeId}
-              className={`p-4 shadow-md rounded-md mb-2 disabled:cursor-not-allowed ${
-                selectedSchemaId === scheme.markingSchemeId
-                  ? "bg-blue-500"
-                  : "bg-white"
-              }`}
-              onClick={() => handleSelectSchema(scheme.markingSchemeId)}
-              disabled={studentAnswerResponse.length == 0}
-            >
-              <h3 className="font-bold">{scheme.markingSchemeName}</h3>
-            </button>
-          ))}
+
+        {/* Marking Schemes Section */}
+        <div className="w-full md:w-1/2 bg-white p-6 rounded-lg shadow-lg">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">Marking Schemes</h2>
+
+          {/* Marking Schemes List */}
+          <div className="h-96 overflow-y-auto border border-gray-300 rounded-lg p-4">
+            {makingSchemes.length > 0 ? (
+              makingSchemes.map((scheme) => (
+                <button
+                  key={scheme.markingSchemeId}
+                  className={`w-full text-left p-3 rounded-lg font-semibold transition duration-300 ${
+                    selectedSchemaId === scheme.markingSchemeId
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-100 hover:bg-gray-200"
+                  }`}
+                  onClick={() => handleSelectSchema(scheme.markingSchemeId)}
+                  disabled={studentAnswerResponse.length === 0}
+                >
+                  {scheme.markingSchemeName}
+                </button>
+              ))
+            ) : (
+              <p className="text-gray-500">No marking schemes available.</p>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -3,8 +3,10 @@ import { connect } from "react-redux";
 import { fetchEvaluate } from "../redux/actions/evaluateAction";
 
 const EvaluateButton = ({ fetchEvaluate, filteredSchema, evaluateResponse }) => {
+  console.log(evaluateResponse);
+
   const handleEvaluate = () => {
-    fetchEvaluate(evaluateResponse);
+    fetchEvaluate(evaluateResponse); 
   };
 
   return (
@@ -18,8 +20,12 @@ const EvaluateButton = ({ fetchEvaluate, filteredSchema, evaluateResponse }) => 
   );
 };
 
-const mapDispatchToProps = (dispatch) => ({
-  fetchEvaluate: (evaluateResponse) => dispatch(fetchEvaluate(evaluateResponse)), // Ensure dispatching correctly
+const mapStateToProps = (state) => ({
+  evaluateResponse: state.evaluateResponse,
 });
 
-export default connect(null, mapDispatchToProps)(EvaluateButton);
+const mapDispatchToProps = (dispatch) => ({
+  fetchEvaluate: (evaluateResponse) => dispatch(fetchEvaluate(evaluateResponse)),
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(EvaluateButton);

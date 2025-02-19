@@ -37,7 +37,7 @@ const MakeMarkingSchemePage = () => {
     };
 
     fetchMarkingSchemas();
-  }, []);
+  }, [makingSchemes]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
