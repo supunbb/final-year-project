@@ -32,6 +32,7 @@ exports.evaluateAnswers = async (req, res) => {
         const questions = markingScheme.questions;
 
         let totalMarks = 0;
+        let fullMarks = 0;
         let answerList = [];
 
         await Promise.all(
@@ -54,6 +55,7 @@ exports.evaluateAnswers = async (req, res) => {
               marks = await essayEvaluate(answerObject, question);
             }
             totalMarks += marks;
+            fullMarks += question.allocatedMarks;
             console.log(marks, totalMarks);
             const a = {
               questionNumber: answerObject.questionNumber,
@@ -132,7 +134,7 @@ const essayEvaluate = async (studentAnswer, markingSchemeAnswer) => {
     console.log(url);
     const response = await fetch(url, options);
     const result = await response.json();
-    essayEvaluateScore = Math.floor(result.similarity * 100);
+    essayEvaluateScore = Math.floor(result.similarity * markingSchemeAnswer.allocatedMarks);
     console.log(essayEvaluateScore);
   } catch (error) {
     console.error(error);
