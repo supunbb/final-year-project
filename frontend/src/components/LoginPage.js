@@ -1,14 +1,17 @@
 // LoginPage.js
-import React from 'react';
+import React, { useState } from 'react';
 import { Link,useNavigate } from 'react-router-dom';
 import bgImg from '../assets/bg-login.png';
 import evaluxIcon from '../assets/evalux icon 1.png';
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('')
   const handleLogin = () => {
-    navigate('/profile');
-    console.log('Login button clicked. Authentication logic will go here.');
+    if(username==='admin' && password==='admin')
+      navigate('/profile');
+    else alert('Incorrect username or password!');
   };
 
   return (
@@ -28,6 +31,7 @@ const LoginPage = () => {
           <input
             type="text"
             id="username"
+            onChange={(e)=>setUsername(e.target.value)}
             className="w-full p-2 border rounded"
             placeholder="Enter your username"
           />
@@ -39,6 +43,7 @@ const LoginPage = () => {
           <input
             type="password"
             id="password"
+            onChange={(e)=>setPassword(e.target.value)}
             className="w-full p-2 border rounded"
             placeholder="Enter your password"
           />

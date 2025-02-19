@@ -172,7 +172,7 @@ const UploadFilesPage = () => {
               makingSchemes.map((scheme) => (
                 <button
                   key={scheme.markingSchemeId}
-                  className={`w-full text-left p-3 rounded-lg font-semibold transition duration-300 ${
+                  className={`w-full text-left p-3 rounded-lg font-semibold transition duration-300 mt-3 ${
                     selectedSchemaId === scheme.markingSchemeId
                       ? "bg-blue-500 text-white"
                       : "bg-gray-100 hover:bg-gray-200"
