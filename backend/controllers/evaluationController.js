@@ -32,7 +32,7 @@ exports.evaluateAnswers = async (req, res) => {
       let totalMarks = 0;
       let answerList = [];
   
-      sa.answers.forEach((answerObject) => {
+      sa.answers.forEach(async (answerObject) => {
         const question = questions.find(
           (q) => q.questionNumber === answerObject.questionNumber
         );
@@ -48,7 +48,7 @@ exports.evaluateAnswers = async (req, res) => {
         if (question.evaluationType) {
           marks = directEvaluate(answerObject, question);
         } else {
-          marks = essayEvaluate(answerObject, question);
+          marks = await essayEvaluate(answerObject, question);
         }
         totalMarks += marks;
         const a = {
@@ -102,10 +102,28 @@ const keywordEvaluate = (studentAnswerObject, markingSchemeAnswerObject) => {
   return marks;
 };
 
-const essayEvaluate = (studentAnswer, markingSchemeAnswer) => {
+const essayEvaluate = async (studentAnswer, markingSchemeAnswer) => {
   let keywordMarks = keywordEvaluate(studentAnswer, markingSchemeAnswer);
   let answerText = studentAnswer.answerText;
   let correctAnswer = markingSchemeAnswer.correctAnswer;
+  
+  const url = `https://twinword-text-similarity-v1.p.rapidapi.com/similarity/?text1=${answerText}&text2=${correctAnswer}`;
+
+  const options = {
+	method: 'GET',
+	headers: {
+		'x-rapidapi-key': 'f65f9d288dmshc7237f422f663b4p120364jsnea1457252e8b',
+		'x-rapidapi-host': 'twinword-text-similarity-v1.p.rapidapi.com'
+	  }
+  };
+
+  try {
+    const response = await fetch(url, options);
+    const result = await response.text();
+    console.log(result);
+  } catch (error) {
+    console.error(error);
+  }
 
   let essayEvaluateScore =
     Math.floor(stringSimilarity.compareTwoStrings(answerText, correctAnswer)) *
