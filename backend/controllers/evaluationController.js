@@ -15,6 +15,7 @@ exports.evaluateAnswers = async (req, res) => {
     
     const marksList = await Promise.all(studentAnswersIds.map(async aid=>{
       const sa = await StudentAnswer.findById(aid)
+      console.log("AAAAAA", sa.fileName);
 
       const studentName = sa.fileName.split("-")[1].split(".")[0];
   
@@ -60,7 +61,7 @@ exports.evaluateAnswers = async (req, res) => {
         answerList.push(a);
       });
   
-      return { _id: sa._id, fileName, studentName, totalMarks, answerList };
+      return { _id: sa._id, fileName: sa.fileName, studentName, totalMarks, answerList };
     }));
 
     res.status(200).json(marksList);
