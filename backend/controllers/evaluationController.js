@@ -74,6 +74,7 @@ exports.evaluateAnswers = async (req, res) => {
           studentName,
           totalMarks,
           answerList,
+          fullMarks,
         };
       })
     );

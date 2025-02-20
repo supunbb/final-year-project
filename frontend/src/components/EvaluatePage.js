@@ -37,7 +37,7 @@ const EvaluatePage = () => {
                 </h1>
                 <h2>
                   {data.totalMarks !== undefined
-                    ? `Total Marks: ${data.totalMarks}`
+                    ? `Total Marks: ${data.totalMarks} / ${data.fullMarks}`
                     : "Total Marks"}
                 </h2>
               </button>
